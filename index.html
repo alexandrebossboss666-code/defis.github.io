@@ -212,6 +212,18 @@ tiktok
 
 <script>
 
+let timerSecret;
+
+document.querySelector("h3").addEventListener("touchstart", () => {
+    timerSecret = setTimeout(() => {
+        resetOverlay.style.display = "flex";
+    }, 3000); // 3 secondes
+});
+
+document.querySelector("h3").addEventListener("touchend", () => {
+    clearTimeout(timerSecret);
+});
+    
 const rulesOverlay = document.getElementById("overlay");
 const resetOverlay = document.getElementById("resetOverlay");
 
