@@ -21,7 +21,9 @@ body{font-family:Arial;background:white;margin:0}
 #modal{background:white;padding:20px;border-radius:20px}
 button{padding:10px 20px;border:none;border-radius:10px}
 .oui{background:#FAF30C;color:white}
-
+a{
+    color:#FAF30C;
+}
 
 #btn-instagram { 
     position: absolute;
@@ -143,6 +145,51 @@ button{padding:10px 20px;border:none;border-radius:10px}
     color: white;
 }
 
+.bottom-bar {
+   position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    background: transparent;
+}
+
+/* Champ texte */
+#codeInput {
+    width: 300px;
+    padding: 12px 15px;
+    border: 2px solid #FAF30C;
+    border-radius: 10px;
+    outline: none;
+    font-size: 16px;
+}
+
+/* Bouton */
+#validateBtn {
+    padding: 12px 18px;
+    background-color: #FAF30C;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#validateBtn:hover {
+    background-color: #27ae60;
+}
+
+#quiz{
+    display:none;
+    padding:20px;
+    padding-bottom:140px;
+    max-height: calc(100vh - 120px);
+    overflow-y:auto;
+}
+
 </style>
 </head>
 <body>
@@ -184,8 +231,9 @@ tiktok
         <p>Sur ce site vous devrez résoudre les défis et minimum avoir 5/10 
             pour débloquer le défi suivant. il faudra mettre un jeton dans le monnayeur
             pour pouvoir accéder aux défis. Interdit d'ouvrir l'inspecteur.<br> <br> 
-        Bonne chance<br> <br>
-    Difficulté: medium</p>
+        Bonne chance<br> <br> 
+
+    difficulté: medium</p>
 
     </div>
 </div>
@@ -213,6 +261,11 @@ tiktok
             </button>
         </div>
     </div>
+</div>
+
+<div class="bottom-bar">
+    <input type="text" id="codeInput" placeholder="Entrer le code">
+    <button id="validateBtn">Valider</button>
 </div>
 
 <div id="monnayeur">Monnayeur</div>
@@ -323,7 +376,6 @@ const data=[
 ]
 ];
 
-
 function save(){
 localStorage.jetons = jetons;
 localStorage.defis = JSON.stringify(defis);
@@ -361,9 +413,15 @@ if(v&&+v.value===e.rep)score++;
 alert('Score : '+score+'/10');
 monnaie=false;
 if(score>=5){
-if(i<3)defis[i+1]=true;
-alert('Défi réussi !');
-}else alert('Échec : il faudra remettre un jeton.');
+    if(i<3){
+        defis[i+1]=true;
+        alert('Défi réussi !');
+    } else {
+        alert('Vous avez réussi les défis, code: DBX39');
+    }
+}else{
+    alert('Échec : il faudra remettre un jeton.');
+}
 save(); afficher(); quiz.style.display='none';
 }
 const piece=document.getElementById('piece');
@@ -537,6 +595,27 @@ function verifierAntiCheat(){
         ouvrirAntiCheat();
     }
 }
+
+document.getElementById("validateBtn").addEventListener("click", function () {
+    const code = document.getElementById("codeInput").value;
+
+    if (code === "DBX39") {
+
+        // reset propre avant changement de page
+        jetons = 5;
+        monnaie = false;
+        defis = [true, false, false, false];
+
+        save();
+
+        alert("Code validé ! Passage au niveau suivant.");
+
+        window.location.href = "defis3.html";
+
+    } else {
+        alert("Code incorrect");
+    }
+});
 
 setInterval(timer,1000);
 timer();
