@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recevoir mon code — Mode expert</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  body{
+    font-family:'Inter',sans-serif;
+    max-width:420px;
+    margin:60px auto;
+    padding:0 20px;
+    color:#26261f;
+  }
+  h1{ font-size:1.3rem; }
+  input{
+    width:100%;
+    padding:10px 12px;
+    border-radius:8px;
+    border:1.5px solid #9b9b96;
+    margin-bottom:14px;
+    font-size:0.95rem;
+    box-sizing:border-box;
+  }
+  button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#FFBA6B;
+    font-weight:700;
+    cursor:pointer;
+    font-size:0.95rem;
+  }
+  button:hover{ background:#e8a04f; }
+  button:disabled{ background:#c7c7c4; color:#6b6b67; cursor:not-allowed; }
+  #msg{
+    margin-top:16px;
+    font-size:0.9rem;
+    font-weight:600;
+  }
+  #msg.error{ color:#c0342c; }
+  #msg.success{ color:#3f7a2b; }
+  .note{
+    background:#f2f2ef;
+    padding:12px 14px;
+    border-radius:8px;
+    font-size:0.82rem;
+    color:#6b6b67;
+    margin-bottom:20px;
+    line-height:1.4;
+  }
+</style>
+</head>
+<body>
+  <h1>Reçois ton code du mode expert</h1>
+  <p class="note">
+    Entre ton adresse email pour recevoir ton code à 6 chiffres.
+    Il sera valable 10 minutes et utilisable une seule fois sur le site du test de réflexion.
+  </p>
+  <input type="email" id="emailInput" placeholder="Ton adresse email">
+  <button id="sendBtn">Recevoir mon code</button>
+  <p id="msg"></p>
+
+<script>
+  /* ===================== CONFIG EmailJS ===================== */
+  const EMAILJS_PUBLIC_KEY  = 'bjtrhwEcD5a0TvA-p';
+  const EMAILJS_SERVICE_ID  = 'service_6up8bo9';
+  const EMAILJS_TEMPLATE_ID = 'template_ukv7jwf';
+  /* ============================================================ */
+
+  /* ===================== CONFIG Supabase (mêmes valeurs que test-de-reflexion.html) ===================== */
+  const SUPABASE_URL = 'https://alrcdwhyrgqqrfyxqklg.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_AXSZBIjcBZbAVosgFccfYQ_dUVhaXa0';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+  });
+  /* ======================================================================================================= */
+
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+
+  function generatePin(len = 6){
+    let code = '';
+    for(let i = 0; i < len; i++){
+      code += Math.floor(Math.random() * 10);
+    }
+    return code;
+  }
+
+  const msg = document.getElementById('msg');
+  const sendBtn = document.getElementById('sendBtn');
+
+  sendBtn.addEventListener('click', async () => {
+    const email = document.getElementById('emailInput').value.trim();
+    msg.className = '';
+    if(!email){
+      msg.textContent = 'Entre une adresse email.';
+      msg.classList.add('error');
+      return;
+    }
+
+    sendBtn.disabled = true;
+    msg.textContent = 'Envoi en cours…';
+    const code = generatePin();
+
+    try{
+      const { error: insertError } = await sb.from('expert_codes').insert([{
+        email: email,
+        code: code,
+        used: false
+      }]);
+      if(insertError){
+        msg.textContent = 'Erreur : ' + insertError.message;
+        msg.classList.add('error');
+        sendBtn.disabled = false;
+        return;
+      }
+
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        email: email,
+        code: code
+      });
+
+      msg.textContent = 'Code envoyé ! Vérifie ta boîte mail (valable 10 minutes).';
+      msg.classList.add('success');
+    } catch(err){
+      console.error(err);
+      msg.textContent = 'Erreur : ' + (err.text || err.message || 'inconnue');
+      msg.classList.add('error');
+      sendBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
