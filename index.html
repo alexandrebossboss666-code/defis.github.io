@@ -66,9 +66,9 @@
 
 <script>
   /* ===================== CONFIG EmailJS ===================== */
-  const EMAILJS_PUBLIC_KEY  = 'bjtrhwEcD5a0TvA-p';
-  const EMAILJS_SERVICE_ID  = 'service_6up8bo9';
-  const EMAILJS_TEMPLATE_ID = 'template_ukv7jwf';
+  const EMAILJS_PUBLIC_KEY  = 'COLLE_TA_PUBLIC_KEY_ICI';
+  const EMAILJS_SERVICE_ID  = 'COLLE_TON_SERVICE_ID_ICI';
+  const EMAILJS_TEMPLATE_ID = 'COLLE_TON_TEMPLATE_ID_ICI';
   /* ============================================================ */
 
   /* ===================== CONFIG Supabase (mêmes valeurs que test-de-reflexion.html) ===================== */
@@ -89,11 +89,25 @@
     return code;
   }
 
+  const EMAIL_REQUEST_KEY = 'expert_email_requested';
+
   const msg = document.getElementById('msg');
   const sendBtn = document.getElementById('sendBtn');
+  const emailInput = document.getElementById('emailInput');
+
+  function lockForm(message){
+    emailInput.disabled = true;
+    sendBtn.disabled = true;
+    msg.className = 'success';
+    msg.textContent = message;
+  }
+
+  if(localStorage.getItem(EMAIL_REQUEST_KEY) === 'true'){
+    lockForm('Tu as déjà demandé ton code. Vérifie ta boîte mail (valable 10 minutes après l\'envoi).');
+  }
 
   sendBtn.addEventListener('click', async () => {
-    const email = document.getElementById('emailInput').value.trim();
+    const email = emailInput.value.trim();
     msg.className = '';
     if(!email){
       msg.textContent = 'Entre une adresse email.';
@@ -102,6 +116,7 @@
     }
 
     sendBtn.disabled = true;
+    emailInput.disabled = true;
     msg.textContent = 'Envoi en cours…';
     const code = generatePin();
 
@@ -115,6 +130,7 @@
         msg.textContent = 'Erreur : ' + insertError.message;
         msg.classList.add('error');
         sendBtn.disabled = false;
+        emailInput.disabled = false;
         return;
       }
 
@@ -123,13 +139,14 @@
         code: code
       });
 
-      msg.textContent = 'Code envoyé ! Vérifie ta boîte mail (valable 10 minutes).';
-      msg.classList.add('success');
+      localStorage.setItem(EMAIL_REQUEST_KEY, 'true');
+      lockForm('Code envoyé ! Vérifie ta boîte mail (valable 10 minutes).');
     } catch(err){
       console.error(err);
       msg.textContent = 'Erreur : ' + (err.text || err.message || 'inconnue');
       msg.classList.add('error');
       sendBtn.disabled = false;
+      emailInput.disabled = false;
     }
   });
 </script>
