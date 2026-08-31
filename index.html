@@ -89,7 +89,9 @@
     return code;
   }
 
-  const EMAIL_REQUEST_KEY = 'expert_email_requested';
+  const EXPERT_CODE_REQUESTED_AT_KEY = 'expert_code_requested_at';
+  const EXPERT_PENDING_CODE_KEY = 'expert_pending_code';
+  const CODE_VALID_MS = 10 * 60 * 1000;
 
   const msg = document.getElementById('msg');
   const sendBtn = document.getElementById('sendBtn');
@@ -102,9 +104,43 @@
     msg.textContent = message;
   }
 
-  if(localStorage.getItem(EMAIL_REQUEST_KEY) === 'true'){
-    lockForm('Tu as déjà demandé ton code. Vérifie ta boîte mail (valable 10 minutes après l\'envoi).');
+  function unlockForm(message){
+    emailInput.disabled = false;
+    sendBtn.disabled = false;
+    msg.className = '';
+    msg.textContent = message || '';
   }
+
+  async function checkPendingCodeStatus(){
+    const requestedAt = localStorage.getItem(EXPERT_CODE_REQUESTED_AT_KEY);
+    const pendingCode = localStorage.getItem(EXPERT_PENDING_CODE_KEY);
+    if(!requestedAt) return;
+
+    // Le code a-t-il déjà été utilisé (validé sur test-de-reflexion.html) ? Si oui, verrouillage définitif.
+    try{
+      const { data, error } = await sb.from('expert_codes').select('used').eq('code', pendingCode).maybeSingle();
+      if(!error && data && data.used){
+        lockForm('Ton code a déjà été utilisé, le mode expert est débloqué.');
+        return;
+      }
+    } catch(e){
+      // en cas d'erreur réseau, on retombe sur la logique basée sur le temps ci-dessous
+    }
+
+    const elapsed = Date.now() - new Date(requestedAt).getTime();
+    const remaining = CODE_VALID_MS - elapsed;
+
+    if(remaining > 0){
+      lockForm('Code envoyé ! Vérifie ta boîte mail (valable 10 minutes).');
+      setTimeout(checkPendingCodeStatus, remaining + 500);
+    } else {
+      localStorage.removeItem(EXPERT_CODE_REQUESTED_AT_KEY);
+      localStorage.removeItem(EXPERT_PENDING_CODE_KEY);
+      unlockForm('Ton précédent code a expiré, tu peux en redemander un.');
+    }
+  }
+
+  checkPendingCodeStatus();
 
   sendBtn.addEventListener('click', async () => {
     const email = emailInput.value.trim();
@@ -139,8 +175,10 @@
         code: code
       });
 
-      localStorage.setItem(EMAIL_REQUEST_KEY, 'true');
+      localStorage.setItem(EXPERT_CODE_REQUESTED_AT_KEY, new Date().toISOString());
+      localStorage.setItem(EXPERT_PENDING_CODE_KEY, code);
       lockForm('Code envoyé ! Vérifie ta boîte mail (valable 10 minutes).');
+      setTimeout(checkPendingCodeStatus, CODE_VALID_MS + 500);
     } catch(err){
       console.error(err);
       msg.textContent = 'Erreur : ' + (err.text || err.message || 'inconnue');
