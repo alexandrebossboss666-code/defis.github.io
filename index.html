@@ -89,6 +89,10 @@
     return code;
   }
 
+  function isValidEmailFormat(email){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
   const EXPERT_CODE_REQUESTED_AT_KEY = 'expert_code_requested_at';
   const EXPERT_PENDING_CODE_KEY = 'expert_pending_code';
   const CODE_VALID_MS = 10 * 60 * 1000;
@@ -150,6 +154,11 @@
       msg.classList.add('error');
       return;
     }
+    if(!isValidEmailFormat(email)){
+      msg.textContent = 'Adresse email invalide (vérifie qu\'il y a bien un @ et un domaine, ex : nom@exemple.fr).';
+      msg.classList.add('error');
+      return;
+    }
 
     sendBtn.disabled = true;
     emailInput.disabled = true;
@@ -190,3 +199,4 @@
 </script>
 </body>
 </html>
+
