@@ -120,15 +120,27 @@
     const pendingCode = localStorage.getItem(EXPERT_PENDING_CODE_KEY);
     if(!requestedAt) return;
 
-    // Le code a-t-il déjà été utilisé (validé sur test-de-reflexion.html) ? Si oui, verrouillage définitif.
+    // Le code a-t-il déjà été utilisé (validé sur test-de-reflexion.html) ?
+    let usedStatus = null; // null = impossible à vérifier (pas de connexion)
     try{
       const { data, error } = await sb.from('expert_codes').select('used').eq('code', pendingCode).maybeSingle();
-      if(!error && data && data.used){
-        lockForm('Ton code a déjà été utilisé, le mode expert est débloqué.');
-        return;
+      if(!error){
+        usedStatus = data ? !!data.used : false;
       }
     } catch(e){
-      // en cas d'erreur réseau, on retombe sur la logique basée sur le temps ci-dessous
+      usedStatus = null;
+    }
+
+    if(usedStatus === true){
+      lockForm('Ton code a déjà été utilisé, le mode expert est débloqué.');
+      return;
+    }
+
+    if(usedStatus === null){
+      // Pas de connexion : impossible de vérifier, on reste verrouillé par précaution plutôt que de déverrouiller à tort
+      lockForm('Connexion impossible pour vérifier ton code. Réessaie avec une connexion internet active.');
+      setTimeout(checkPendingCodeStatus, 15000);
+      return;
     }
 
     const elapsed = Date.now() - new Date(requestedAt).getTime();
@@ -199,4 +211,3 @@
 </script>
 </body>
 </html>
-
